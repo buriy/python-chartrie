@@ -9,28 +9,28 @@ choice_links[6] = {9641}
 values[6] = VALUE
 */
 typedef struct Node {
-	char *choices;
-	struct Node* children;
-	int value;
+    char *choices;
+    struct Node* children;
+    int value;
 } Node;
 
 typedef struct Trie {
-	Node* root;
+    Node* root;
 } Trie;
 
 typedef struct SerialTrie {
-	Node* root;
-	char* stream;
-	unsigned int nodes;
-	unsigned int chars;
-	unsigned int size; // == len(stream)
+    Node* root;
+    char* stream;
+    unsigned int nodes;
+    unsigned int chars;
+    unsigned int size; // == len(stream)
 } SerialTrie;
 
 typedef struct FrozenTrie {
-	Node* nodes;
-	char* chars;
-	unsigned int node_count; // == len(nodes)
-	unsigned int char_count; // == len(chars)
+    Node* nodes;
+    char* chars;
+    unsigned int node_count; // == len(nodes)
+    unsigned int char_count; // == len(chars)
 } FrozenTrie;
 
 Trie* trie_create();
