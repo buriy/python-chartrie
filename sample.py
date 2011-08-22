@@ -1,23 +1,29 @@
-from chartrie import CharTrie
+from chartrie import CharTrie, FrozenCharTrie
 t = CharTrie()
 print len(t)
-t['hello'] = 1
+t['hello'] = 49
 print len(t)
-t['hello1'] = 2
+t['hello1'] = 50
 print len(t)
-t['hello2'] = 3
+t['hello2'] = 51
 print len(t)
-t['hello3'] = 4
+t['hello3'] = 52
 print len(t)
-t['hello4'] = 5
+t['hello4'] = 53
 print len(t)
-t['help'] = 6
+t['help'] = 54
 print len(t)
-t['abc'] = 7
+t['abc'] = 55
 print len(t)
-t['v'] = 8
+t['v'] = 56
 print len(t)
-t['a'] = 9
+t['a'] = 57
 print len(t)
 t.debug_print()
-print t.serialize()
+stream = t.dumps()
+f = open('dump.trie', 'wb')
+f.write(stream)
+f.close()
+d = FrozenCharTrie()
+d.loads(stream)
+print len(d)

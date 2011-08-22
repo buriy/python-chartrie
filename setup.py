@@ -5,11 +5,11 @@ from Cython.Distutils import build_ext
 
 setup(
     name='chartrie',
-    version='0.1.2',
+    version='0.1.3',
     description='Given a list of strings, creates a trie to perform fast prefix search.',
     author='Yuri Baburov',
     author_email='burchik@gmail.com',
-    py_modules=['chartrie'],
+    #py_modules=['chartrie'],
     cmdclass = {'build_ext': build_ext},
     ext_modules=[Extension('chartrie', ['trie.c', 'chartrie.pyx'])],
 )

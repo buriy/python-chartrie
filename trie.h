@@ -8,23 +8,36 @@ choices[6] = "#ing" // "patricia trie" optimization
 choice_links[6] = {9641}
 values[6] = VALUE
 */
-typedef struct Node{
+typedef struct Node {
 	char *choices;
 	struct Node* children;
 	int value;
 } Node;
 
-typedef struct Trie{
+typedef struct Trie {
 	Node* root;
-	Node* all_nodes; // length() = node_count
-	char* all_choices; // length() = 2 * node_count - 1
-	unsigned int node_count;
 } Trie;
 
-Trie* trie_create(int required);
+typedef struct SerialTrie {
+	Node* root;
+	char* stream;
+	unsigned int nodes;
+	unsigned int chars;
+	unsigned int size; // == len(stream)
+} SerialTrie;
+
+typedef struct FrozenTrie {
+	Node* nodes;
+	char* chars;
+	unsigned int node_count; // == len(nodes)
+	unsigned int char_count; // == len(chars)
+} FrozenTrie;
+
+Trie* trie_create();
 int trie_find_word(Node *trie, const char* str);
 Node* trie_add_word(Node *trie, const char* str);
-int trie_size(Trie* trie);
-void trie_compact(Trie *trie);
+int trie_size(Node* trie);
 void trie_destroy(Trie *trie);
-void trie_print(Trie* trie);
+void trie_print(Node* trie);
+SerialTrie* trie_save(Node* trie);
+FrozenTrie* trie_load(char* stream);

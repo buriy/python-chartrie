@@ -49,6 +49,7 @@
 				RuntimeLibrary="3"
 				DisableLanguageExtensions="true"
 				UsePrecompiledHeader="1"
+				BrowseInformation="1"
 				WarningLevel="3"
 				DebugInformationFormat="4"
 				CompileAs="1"
