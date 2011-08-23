@@ -11,9 +11,10 @@ values[6] = VALUE // this word is legal
 #include "trie.h"
 #define EMPTY_VALUE -1
 //#define _DEBUG
+//#undef _DEBUG
 
 Node* _add_root_node(){
-    Node* trie = (Node*)malloc(sizeof(Node));
+    Node* trie = malloc(sizeof(Node));
     trie->choices = NULL;
     trie->children = NULL;
     trie->value = EMPTY_VALUE;
@@ -25,10 +26,10 @@ int _add_choice(Node* node, const char chr){
     char* choices = node->choices;
     if(choices != NULL){
         insert_position = strlen(choices);
-        choices = (char*)realloc(choices, (insert_position+2) * sizeof(*choices));
+        choices = realloc(choices, (insert_position+2) * sizeof(*choices));
     }else{
         insert_position = 0;
-        choices = (char*)malloc(2 * sizeof(*choices));
+        choices = malloc(2 * sizeof(*choices));
     }
     choices[insert_position] = chr;
     choices[insert_position+1] = 0;
@@ -41,7 +42,7 @@ int _add_choice(Node* node, const char chr){
 }
 
 Trie* trie_create(){
-    Trie* trie = (Trie*)malloc(sizeof(Trie));
+    Trie* trie = malloc(sizeof(Trie));
     trie->root = _add_root_node();
     return trie;
 }
@@ -49,8 +50,8 @@ Trie* trie_create(){
 int trie_find_word(Node *trie, const char* str){
     int last_branch=0, last_match=0;
     Node *next_pos = trie;
-    const char* ptr;
-    for(ptr = str; *ptr; ptr++){
+    const char* ptr = str;
+    for(; *ptr; ptr++){
         if(!next_pos || !next_pos->choices){
             return ~(ptr-str);
         }else{ // trying prefixes
@@ -92,10 +93,6 @@ Node* trie_add_word(Node *trie, const char* str){
 }
 
 void _trie_print(Node* trie, int depth){
-    if(depth == 0){
-        printf("Trie:\n");
-    }
-
     if(trie && trie->choices){
         char* c;
         int i = 0, j;
@@ -158,22 +155,20 @@ int node_save(Node* node, char* stream){ // returns offset
     int offset = 0;
     if(node){
         if(stream){
-            strncpy(stream+offset, (char*)&node->value, sizeof(node->value));
+            memcpy(stream+offset, &node->value, sizeof(node->value));
         }
         offset += sizeof(node->value);
         if(node->choices){
             int i, len = strlen(node->choices);
             if(stream){
-                strncpy(stream+offset, node->choices, len+1);
+                memcpy(stream+offset, node->choices, len+1);
             }
             offset += len + 1;
-#ifdef _DEBUG
-            printf("Saving %d children: %s\n", len, node->choices);
-#endif
             for(i=0; i<len; i++){
                 Node* subnode = NULL;
                 if(node->children){
                     subnode = node->children + i;
+                }else{
                 }
                 if(stream){
                     offset += node_save(subnode, stream + offset);
@@ -182,9 +177,6 @@ int node_save(Node* node, char* stream){ // returns offset
                 }
             }
         }else{
-#ifdef _DEBUG
-            printf("Saving empty node!\n");
-#endif
             if(stream){
                 *(stream+offset) = 0;
             }
@@ -193,6 +185,7 @@ int node_save(Node* node, char* stream){ // returns offset
     }else{
 #ifdef _DEBUG
         printf("Saving NULL node!\n");
+        fflush(stdout);
 #endif
     }
     return offset;
@@ -205,12 +198,13 @@ SerialTrie* trie_save(Node* root){
     st->nodes = node_size(root);
     st->size = node_save(root, NULL);
     st->chars = st->size - st->nodes * sizeof(int); // st->chars == st->nodes * 2 - 1 by now
+    //printf("Saving: %d bytes, %d chars, %d nodes\n", st->size, st->chars, st->nodes);
     st->size += 3 * sizeof(int);
     st->stream = malloc(st->size);
     stream = st->stream;
-    strncpy(stream, (char*)&st->size , sizeof(int)); stream += sizeof(int);
-    strncpy(stream, (char*)&st->nodes, sizeof(int)); stream += sizeof(int);
-    strncpy(stream, (char*)&st->chars, sizeof(int)); stream += sizeof(int);
+    memcpy(stream, &st->size , sizeof(int)); stream += sizeof(int);
+    memcpy(stream, &st->nodes, sizeof(int)); stream += sizeof(int);
+    memcpy(stream, &st->chars, sizeof(int)); stream += sizeof(int);
     actual = node_save(root, stream) + 3 * sizeof(int);
 #ifdef _DEBUG
     printf("Expected: %d, Actual: %d\n", st->size, actual);
@@ -225,15 +219,11 @@ typedef struct LoadPosition{
 
 int node_load(Node* node, LoadPosition *position, char* stream){ // returns offset
     int offset = 0;
-    strncpy((char*)&node->value, stream + offset, sizeof(node->value));
+    memcpy(&node->value, stream + offset, sizeof(node->value));
     offset += sizeof(node->value);
-#ifdef _DEBUG
-    printf("Loaded value: %d\n", node->value);
-#endif
     if(*(stream+offset)){
         int i, len = strlen(stream + offset);
-
-        strncpy(position->chars, stream + offset, len + 1);
+        memcpy(position->chars, stream + offset, len + 1);
         offset += len + 1;
         
         node->choices = position->chars;
@@ -242,17 +232,11 @@ int node_load(Node* node, LoadPosition *position, char* stream){ // returns offs
         position->chars += len + 1;
         position->nodes += len;
         
-#ifdef _DEBUG
-        printf("Loading %d children: %s\n", len, node->choices);
-#endif
         for(i=0; i<len; i++){
             Node* child = node->children+i;
             offset += node_load(child, position, stream+offset);
         }
     }else{
-#ifdef _DEBUG
-        printf("Loaded empty node.\n");
-#endif
         node->children = NULL;
         node->choices = NULL;
         offset += 1;
@@ -265,14 +249,15 @@ FrozenTrie* trie_load(char* stream){
     Node* root;
     FrozenTrie* ftrie = malloc(sizeof(FrozenTrie));
     unsigned int node_offset, char_offset;
-    int size = *(int*)stream;
-    stream += sizeof(int);
-    ftrie->node_count = *(int*)stream;
-    stream += sizeof(int);
-    ftrie->char_count = *(int*)stream;
-    stream += sizeof(int);
+    int size          = *(int*)stream; stream += sizeof(int);
+    ftrie->node_count = *(int*)stream; stream += sizeof(int);
+    ftrie->char_count = *(int*)stream; stream += sizeof(int);
+#ifdef _DEBUG
+    printf("Loading: %d bytes, %d chars, %d nodes\n", size, ftrie->char_count, ftrie->node_count);
+#endif
+    fflush(stdout);
     ftrie->nodes = malloc(ftrie->node_count * sizeof(Node));
-    ftrie->chars = malloc(ftrie->char_count * sizeof(char));
+    ftrie->chars = malloc(ftrie->char_count);
     lp.nodes = ftrie->nodes;
     lp.chars = ftrie->chars;
     root = lp.nodes++;

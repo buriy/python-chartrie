@@ -50,12 +50,12 @@ cdef class CharTrie:
         return node
 
     def __setitem__(self, key, value):
+        assert value>=0, "Value should be >= 0"
         node = trie_add_word(self.trie.root, key)
         node.value = value
 
     def dumps(self):
-        cdef Trie* trie = self.trie
-        cdef SerialTrie* buf = trie_save(trie.root)
+        cdef SerialTrie* buf = trie_save(self.trie.root)
         try:
             result = buf.stream[:buf.size]
         finally:

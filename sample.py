@@ -19,6 +19,10 @@ t['v'] = 56
 print len(t)
 t['a'] = 57
 print len(t)
+t[''] = 58
+print len(t)
+print 'get:', t['']
+print 'get:', t['hel']
 t.debug_print()
 stream = t.dumps()
 f = open('dump.trie', 'wb')

@@ -8,10 +8,13 @@ choices[6] = "#ing" // "patricia trie" optimization
 choice_links[6] = {9641}
 values[6] = VALUE
 */
+
+#pragma pack(push,1)
+
 typedef struct Node {
+    int value;
     char *choices;
     struct Node* children;
-    int value;
 } Node;
 
 typedef struct Trie {
@@ -21,9 +24,9 @@ typedef struct Trie {
 typedef struct SerialTrie {
     Node* root;
     char* stream;
-    unsigned int nodes;
-    unsigned int chars;
-    unsigned int size; // == len(stream)
+    int size; // == len(stream)
+    int nodes;
+    int chars;
 } SerialTrie;
 
 typedef struct FrozenTrie {
@@ -41,3 +44,5 @@ void trie_destroy(Trie *trie);
 void trie_print(Node* trie);
 SerialTrie* trie_save(Node* trie);
 FrozenTrie* trie_load(char* stream);
+
+#pragma pack(pop)
