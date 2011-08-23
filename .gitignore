@@ -1,0 +1,6 @@
+build
+chartrie_old.c
+*.pyc
+*.vcproj*
+.project
+.pydevproject

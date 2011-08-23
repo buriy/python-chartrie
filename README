@@ -1,0 +1,31 @@
+=============
+CharTrie
+=============
+
+This is pure-C version of Trie data structure: http://en.wikipedia.org/wiki/Trie , 
+also called "prefix tree", optimized for string keys and int values.
+
+The current interface is the following::
+
+    class CharTrie:
+        def __len__(self): pass
+        def __getitem__(self, key): pass
+        def __setitem__(self, key, value): pass
+        def dumps(self): pass
+        def debug_print(self): pass
+        def find(self, key): pass
+
+    class FrozenCharTrie:
+        def __len__(self): pass
+        def __getitem__(self, key): pass
+        def loads(self, stream): pass
+        def debug_print(self): pass
+        def find(self, key): pass
+
+Please note, that len(x) returns the number of chars in the trie, not the number of nodes with values.
+Also, only values >= 0 are supported (until version 0.2)
+
+
+------------
+Licence: BSD
+------------

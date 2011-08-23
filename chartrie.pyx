@@ -30,7 +30,6 @@ cdef extern from "trie.h":
 
 cdef class CharTrie:
     cdef Trie *trie
-    cdef FrozenTrie *ft
     def __cinit__(self):
         self.trie = trie_create()
 

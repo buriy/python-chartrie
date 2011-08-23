@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from distutils.core import setup, Extension
-#from Cython.Distutils import build_ext
+from Cython.Distutils import build_ext
 
 setup(
     name='chartrie',
@@ -9,5 +9,6 @@ setup(
     description='Given a list of strings, creates a trie to perform fast prefix search.',
     author='Yuri Baburov',
     author_email='burchik@gmail.com',
-    ext_modules=[Extension('chartrie', ['trie.c', 'chartrie.c'])],
+    cmdclass = {'build_ext': build_ext},
+    ext_modules=[Extension('chartrie', ['trie.c', 'chartrie.pyx'])],
 )
