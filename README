@@ -8,19 +8,21 @@ also called "prefix tree", optimized for string keys and int values.
 The current interface is the following::
 
     class CharTrie:
-        def __len__(self): pass
-        def __getitem__(self, key): pass
-        def __setitem__(self, key, value): pass
-        def dumps(self): pass
-        def debug_print(self): pass
-        def find(self, key): pass
+        def __len__(self)
+        def __getitem__(self, key)
+        def __setitem__(self, key, value)
+        def dumps(self)
+        def debug_print(self)
+        def find(self, key)
 
     class FrozenCharTrie:
-        def __len__(self): pass
-        def __getitem__(self, key): pass
-        def loads(self, stream): pass
-        def debug_print(self): pass
-        def find(self, key): pass
+        def __len__(self)
+        def __getitem__(self, key)
+        def loads(self, stream)
+        def debug_print(self)
+        def find(self, key) # -> value or None
+        def find_prefixes(trie, key) # -> [(position1, value1), (position2, value2), ...]
+        def find_splits(self, FrozenCharTrie suffixes, key) # -> [(position1, prefix1, suffix1), (position2, prefix2, suffix2), ...]
 
 Please note, that len(x) returns the number of chars in the trie, not the number of nodes with values.
 Also, only values >= 0 are supported (until version 0.2)

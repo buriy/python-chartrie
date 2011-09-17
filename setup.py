@@ -5,7 +5,7 @@ from distutils.core import setup, Extension
 
 setup(
     name='chartrie',
-    version='0.1.4',
+    version='0.1.6',
     description='Given a list of strings, creates a trie to perform fast prefix search.',
     author='Yuri Baburov',
     author_email='burchik@gmail.com',

@@ -30,7 +30,7 @@ typedef struct SerialTrie {
 } SerialTrie;
 
 typedef struct FrozenTrie {
-    Node* nodes;
+    Node* root;
     char* chars;
     unsigned int node_count; // == len(nodes)
     unsigned int char_count; // == len(chars)
@@ -42,6 +42,8 @@ Node* trie_add_word(Node *trie, const char* str);
 int trie_size(Node* trie);
 void trie_destroy(Trie *trie);
 void trie_print(Node* trie);
+int* trie_find_prefixes(Node *trie, const char* str);
+int* trie_find_splits(Node* prefixes, Node* suffixes, char* key);
 SerialTrie* trie_save(Node* trie);
 FrozenTrie* trie_load(char* stream);
 

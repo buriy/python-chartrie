@@ -4,8 +4,10 @@ cdef extern from "malloc.h":
 cdef extern from "trie.h":
     cdef struct Trie:
         Node* root
+
     cdef struct Node:
         int value
+
     cdef struct SerialTrie:
         Node* root
         char* stream
@@ -14,7 +16,7 @@ cdef extern from "trie.h":
         unsigned int size
 
     cdef struct FrozenTrie:
-        Node* nodes
+        Node* root
         char* chars
         unsigned int node_count
         unsigned int char_count
@@ -24,7 +26,9 @@ cdef extern from "trie.h":
     Node* trie_add_word(Node *trie, char* word)
     int trie_size(Node* trie)
     void trie_destroy(Trie *trie)
-    void trie_print(Node* trie)
+    void trie_print(Node *trie)
+    int* trie_find_prefixes(Node *trie, char* word)
+    int* trie_find_splits(Node *prefixes, Node* suffixes, char* word)
     SerialTrie* trie_save(Node* trie)
     FrozenTrie *trie_load(char* stream)
 
@@ -71,12 +75,13 @@ cdef class CharTrie:
 
 cdef class FrozenCharTrie:
     cdef FrozenTrie *trie
+    
     def __cinit__(self):
         self.trie = NULL
 
     def __dealloc__(self):
         if self.trie is not NULL:
-            free(self.trie.nodes)
+            free(self.trie.root)
             free(self.trie.chars)
             free(self.trie)
             self.trie = NULL
@@ -85,7 +90,7 @@ cdef class FrozenCharTrie:
         return self.trie.node_count - 1
 
     def __getitem__(self, key):
-        node = trie_find_word(self.trie.nodes, key)
+        node = trie_find_word(self.trie.root, key)
         if node < 0:
             return None
         return node
@@ -94,8 +99,28 @@ cdef class FrozenCharTrie:
         self.trie = trie_load(stream)
 
     def debug_print(self):
-        trie_print(self.trie.nodes)
+        trie_print(self.trie.root)
 
     def find(self, key):
-        node = trie_find_word(self.trie.nodes, key)
+        node = trie_find_word(self.trie.root, key)
         return node
+
+    def find_prefixes(trie, key):
+        cdef int *prefixes
+        prefixes = trie_find_prefixes(trie.trie.root, key)
+        r = []
+        for i in xrange(prefixes[0]):
+            if prefixes[i+1] != -1:
+                r.append((i, prefixes[i+1]))
+        free(prefixes)
+        return r
+
+    def find_splits(self, FrozenCharTrie suffixes, key):
+        cdef Node* prefix_root = self.trie.root
+        cdef Node* suffix_root = suffixes.trie.root
+        cdef int *results = trie_find_splits(prefix_root, suffix_root, key)
+        r = []
+        for i in xrange(results[0]):
+            r.append((results[i*3+1], results[i*3+2], results[i*3+3]))
+        free(results)
+        return r

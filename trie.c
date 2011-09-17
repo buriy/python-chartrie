@@ -72,6 +72,39 @@ int trie_find_word(Node *trie, const char* str){
     }
 }
 
+int* trie_find_prefixes(Node *trie, const char* str){
+    int *target = malloc(sizeof(int) * (strlen(str)+2));
+    int last_branch=0, last_match=0, counter=0;
+    Node *next_pos = trie;
+    const char* ptr = str;
+    for(; *ptr; ptr++){
+        if(!next_pos){
+            target[0] = counter;
+            return target;
+        }else if(!next_pos->choices){
+            target[++counter] = next_pos->value;
+            target[0] = counter;
+            return target;
+        }else{ // trying prefixes
+            char* choices = next_pos->choices;
+            char* found = strchr(choices, *ptr);
+            target[++counter] = next_pos->value;
+            if(found == NULL){
+                target[0] = counter;
+                return target;
+            }else{
+                last_branch = (found - choices) / sizeof(*choices);
+                next_pos = next_pos->children + last_branch;
+            }
+        }
+    }
+    if(next_pos){
+        target[++counter] = next_pos->value;
+    }
+    target[0] = counter;
+    return target;
+}
+
 Node* trie_add_word(Node *trie, const char* str){
     int last_branch=0;
     Node *next_pos = trie;
@@ -96,8 +129,11 @@ void _trie_print(Node* trie, int depth){
     if(trie && trie->choices){
         char* c;
         int i = 0, j;
+        if(trie->value != -1){
+            printf(" -> %d\n", trie->value);
+        }
         for(c = trie->choices; *c; c++, i++){
-            if(i){
+            if(i || trie->value != -1){
                 for(j=0; j<depth; j++){
                     printf(".");
                 }
@@ -106,7 +142,9 @@ void _trie_print(Node* trie, int depth){
             _trie_print(trie->children+i, depth+1);
         }
     }else{
-        printf("\n");
+        if(trie->value != -1){
+            printf(" -> %d\n", trie->value);
+        }
     }
 }
 
@@ -214,7 +252,7 @@ SerialTrie* trie_save(Node* root){
 
 typedef struct LoadPosition{
     char* chars;
-    Node* nodes;
+    Node* root;
 } LoadPosition;
 
 int node_load(Node* node, LoadPosition *position, char* stream){ // returns offset
@@ -227,10 +265,10 @@ int node_load(Node* node, LoadPosition *position, char* stream){ // returns offs
         offset += len + 1;
         
         node->choices = position->chars;
-        node->children = position->nodes;
+        node->children = position->root;
 
         position->chars += len + 1;
-        position->nodes += len;
+        position->root += len;
         
         for(i=0; i<len; i++){
             Node* child = node->children+i;
@@ -256,14 +294,14 @@ FrozenTrie* trie_load(char* stream){
     printf("Loading: %d bytes, %d chars, %d nodes\n", size, ftrie->char_count, ftrie->node_count);
 #endif
     fflush(stdout);
-    ftrie->nodes = malloc(ftrie->node_count * sizeof(Node));
+    ftrie->root = malloc(ftrie->node_count * sizeof(Node));
     ftrie->chars = malloc(ftrie->char_count);
-    lp.nodes = ftrie->nodes;
+    lp.root = ftrie->root;
     lp.chars = ftrie->chars;
-    root = lp.nodes++;
+    root = lp.root++;
     size -= node_load(root, &lp, stream);
     assert(size == 12);
-    node_offset = lp.nodes - ftrie->nodes;
+    node_offset = lp.root - ftrie->root;
     char_offset = lp.chars - ftrie->chars;
     assert(ftrie->char_count >= char_offset);
     assert(ftrie->node_count == node_offset);
@@ -308,6 +346,43 @@ void assert_found(Trie* trie, char* word, int correct){
     assert(position == correct);
 }
 
+int *trie_find_splits(Node* prefix_root, Node* suffix_root, char* key){
+    int i, s=0, l = strlen(key);
+    int *prefixes = trie_find_prefixes(prefix_root, key);
+    int *suffixes, *results, p0, s0, pi, res_len;
+    // { doing key2 = strrev(key)
+    char* key2 = malloc(sizeof(char)*(l+1));
+    for(i=0; i<l; i++) {
+        key2[l-i-1] = key[i];
+    }
+    key2[l] = 0;
+    // }
+    suffixes = trie_find_prefixes(suffix_root, key2);
+    p0 = prefixes[0];
+    s0 = suffixes[0];
+    res_len = (p0 - (l-s0+1));
+    if(res_len <= 0)
+        res_len = 0;
+    results = malloc(sizeof(int)*(res_len*3+1));
+#ifdef _DEBUG
+    printf("p0: %d, s0: %d, res_len: %d\n", p0, s0, res_len);
+#endif
+    for(pi = l-s0+1; pi < p0; pi++){ // l - i < s0 => i > l - s0
+        int si = l-pi;
+        if(prefixes[pi+1] != -1 && suffixes[si+1] != -1){
+            results[s*3+1] = pi;
+            results[s*3+2] = prefixes[pi+1];
+            results[s*3+3] = suffixes[si+1];
+            s++;
+        }
+    }
+    free(key2);
+    free(prefixes);
+    free(suffixes);
+    results[0] = s;
+    return results;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
     char * words[100] = {
@@ -316,8 +391,8 @@ int _tmain(int argc, _TCHAR* argv[])
         "enum", "export", "extends", "false", "finally", "final", "float", "for", 
         "function", "goto", "if", "implements", "import", "in", "instanceof", "int", 
         "interface", "long", "native", "new", "null", "package", "private", "protected", 
-        "public", "return", "short", "static", "super", "switch", "synchronized", "this",
-        "throw", "throws", "transient", "true", "try", "typeof", "var", "void",
+        "public", "return", "short", "static", "super", "switch", "synchronized", 
+        "this", "throw", "throws", "transient", "true", "try", "typeof", "var", "void",
         "volatile", "while", "with", 
         "a", "ab", "abst", "234", 0
     };
@@ -354,5 +429,52 @@ int _tmain(int argc, _TCHAR* argv[])
         FrozenTrie* trie = trie_load(strie->stream);
     }
 
+    {
+        int* prefixes = trie_find_prefixes(trie->root, "abstracted");
+        int i, correct_prefixes[] = {9, -1, 59, 60, -1, 61, -1, -1, -1, 0};
+        for(i=0; i<correct_prefixes[0]; i++){
+            assert(correct_prefixes[i] == prefixes[i]);
+        }
+    }
+    {
+        int* prefixes = trie_find_prefixes(trie->root, "hack");
+        assert(prefixes[0] == 1);
+        assert(prefixes[1] == -1);
+    }
+    {
+        int* prefixes = trie_find_splits(trie->root, trie->root, "enumfi");
+        int i, correct_prefixes[] = {1, 4, 16, 26};
+        for(i=0; i<correct_prefixes[0]*3+1; i++){
+            assert(prefixes[i] == correct_prefixes[i]);
+        }
+    }
+    {
+        int* prefixes = trie_find_splits(trie->root, trie->root, "intba");
+        int i, correct_prefixes[] = {1, 3, 31, 60};
+        for(i=0; i<correct_prefixes[0]*3+1; i++){
+            assert(prefixes[i] == correct_prefixes[i]);
+        }
+    }
+    {
+        int* prefixes = trie_find_splits(trie->root, trie->root, "intsba");
+        int i, correct_prefixes[] = {1, 2, 29, 61};
+        for(i=0; i<correct_prefixes[0]*3+1; i++){
+            assert(prefixes[i] == correct_prefixes[i]);
+        }
+    }
+    {
+        int* prefixes = trie_find_splits(trie->root, trie->root, "abstracttcartsba");
+        int i, correct_prefixes[] = {1, 8, 0, 0};
+        for(i=0; i<correct_prefixes[0]; i++){
+            assert(prefixes[i] == correct_prefixes[i]);
+        }
+    }
+    {
+        int* prefixes = trie_find_splits(trie->root, trie->root, "implementsba");
+        int i, correct_prefixes[] = {1, 10, 27, 60};
+        for(i=0; i<correct_prefixes[0]; i++){
+            assert(prefixes[i] == correct_prefixes[i]);
+        }
+    }
     return 0;
 }
