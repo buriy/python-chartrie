@@ -5,7 +5,7 @@ from Cython.Distutils import build_ext
 
 setup(
     name='chartrie',
-    version='0.1.5',
+    version='0.1.6',
     description='Given a list of strings, creates a trie to perform fast prefix search.',
     author='Yuri Baburov',
     author_email='burchik@gmail.com',
