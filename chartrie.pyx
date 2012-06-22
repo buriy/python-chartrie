@@ -1,4 +1,4 @@
-cdef extern from "malloc.h":
+cdef extern from "stdlib.h":
     void free(void* ptr)
 
 cdef extern from "trie.h":

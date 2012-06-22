@@ -10,6 +10,9 @@ values[6] = VALUE // this word is legal
 #include "stdafx.h"
 #include "trie.h"
 #define EMPTY_VALUE -1
+#if !defined(WIN32) && !defined(MS_WINDOWS)
+#define _TCHAR char*
+#endif
 //#define _DEBUG
 //#undef _DEBUG
 
